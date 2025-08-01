@@ -3,8 +3,8 @@ use std::{env::args, path::PathBuf};
 use eframe::{
     App, Frame,
     egui::{
-        Button, CentralPanel, Context, InnerResponse, ScrollArea, TopBottomPanel, Ui,
-        scroll_area::ScrollAreaOutput,
+        Align, Button, CentralPanel, Context, InnerResponse, Layout, ScrollArea, TopBottomPanel,
+        Ui, scroll_area::ScrollAreaOutput,
     },
 };
 
@@ -48,13 +48,25 @@ impl AudioSortApp {
         Self { files }
     }
 
-    fn files(&self, ui: &mut Ui) -> ScrollAreaOutput<()> {
+    fn files(&mut self, ui: &mut Ui) -> ScrollAreaOutput<()> {
         ScrollArea::vertical()
             .auto_shrink([false, false])
             .show(ui, |ui| {
-                for file in &self.files {
-                    ui.label(file.to_string_lossy());
-                }
+                self.files.retain(|file| {
+                    let mut retain = true;
+
+                    ui.horizontal(|ui| {
+                        ui.label(file.to_string_lossy());
+
+                        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                            if ui.button("Delete").clicked() {
+                                retain = false;
+                            }
+                        });
+                    });
+
+                    retain
+                });
             })
     }
 
