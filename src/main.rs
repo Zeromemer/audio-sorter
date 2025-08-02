@@ -40,7 +40,7 @@ fn main() {
 }
 
 struct AudioSortApp {
-    audios: Vec<Audio>
+    audios: Vec<Audio>,
 }
 
 impl App for AudioSortApp {
@@ -91,7 +91,7 @@ impl AudioSortApp {
                 match files {
                     Ok(mut files) => {
                         self.audios.append(&mut files);
-                    },
+                    }
                     Err(err) => {
                         println!("{err}");
                     }
