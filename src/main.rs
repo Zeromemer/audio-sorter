@@ -9,13 +9,17 @@ use eframe::{
         Ui, scroll_area::ScrollAreaOutput,
     },
 };
+use rfd::FileDialog;
 
 use crate::audio::{Audio, AudioExtractError};
 
 fn main() {
     let native_options = eframe::NativeOptions::default();
 
-    let files = args().skip(1).map(Audio::from_file).collect::<Result<Vec<_>, AudioExtractError>>();
+    let files = args()
+        .skip(1)
+        .map(Audio::from_file)
+        .collect::<Result<Vec<_>, AudioExtractError>>();
     let files = match files {
         Ok(files) => files,
         Err(err) => {
@@ -27,9 +31,7 @@ fn main() {
     let result = eframe::run_native(
         "Audio sorter",
         native_options,
-        Box::new(|cc| {
-            Ok(Box::new(AudioSortApp::new(cc, files)))
-        }),
+        Box::new(|cc| Ok(Box::new(AudioSortApp::new(cc, files)))),
     );
 
     if let Err(err) = result {
@@ -38,7 +40,7 @@ fn main() {
 }
 
 struct AudioSortApp {
-    files: Vec<Audio>,
+    audios: Vec<Audio>
 }
 
 impl App for AudioSortApp {
@@ -50,19 +52,19 @@ impl App for AudioSortApp {
         });
 
         TopBottomPanel::bottom("bottom_buttons").show(ctx, |ui| {
-            Self::actions(ui);
+            self.actions(ui);
         });
     }
 }
 
 impl AudioSortApp {
     const fn new(_cc: &eframe::CreationContext<'_>, files: Vec<Audio>) -> Self {
-        Self { files }
+        Self { audios: files }
     }
 
     fn files(&mut self, ui: &mut Ui) -> ScrollAreaOutput<()> {
         ScrollArea::vertical().show(ui, |ui| {
-            self.files.retain(|file| {
+            self.audios.retain(|file| {
                 let mut retain = true;
 
                 ui.horizontal(|ui| {
@@ -82,7 +84,33 @@ impl AudioSortApp {
         })
     }
 
-    fn actions(ui: &mut Ui) -> InnerResponse<()> {
-        ui.horizontal(|ui| if ui.add(Button::new("add")).clicked() {})
+    fn actions(&mut self, ui: &mut Ui) -> InnerResponse<()> {
+        ui.horizontal(|ui| {
+            if ui.add(Button::new("add")).clicked() {
+                let files = select_files_to_add();
+                match files {
+                    Ok(mut files) => {
+                        self.audios.append(&mut files);
+                    },
+                    Err(err) => {
+                        println!("{err}");
+                    }
+                }
+            }
+        })
     }
+}
+
+fn select_files_to_add() -> Result<Vec<Audio>, AudioExtractError> {
+    let handles = FileDialog::new().pick_files();
+
+    handles.map_or_else(
+        || Ok(Vec::new()),
+        |handles| {
+            handles
+                .iter()
+                .map(|path| Audio::from_file(path.to_string_lossy().into_owned()))
+                .collect()
+        },
+    )
 }

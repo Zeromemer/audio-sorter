@@ -1,9 +1,10 @@
 use core::{
     error::Error,
-    fmt::{self, Display}
+    fmt::{self, Display},
 };
 use std::{
-    io::Error as IoError, process::{Command, ExitStatus, Stdio}
+    io::Error as IoError,
+    process::{Command, ExitStatus, Stdio},
 };
 
 use itertools::Itertools;
@@ -16,14 +17,14 @@ pub struct Audio {
 #[derive(Debug)]
 pub enum AudioExtractError {
     Command(IoError),
-    FFmpeg(ExitStatus, String)
+    FFmpeg(ExitStatus, String),
 }
 
 impl Display for AudioExtractError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Command(err) => write!(f, "Error instantiating command {err}")?,
-            Self::FFmpeg(status, err) => write!(f, "FFmpeg: {err} (status code {status})")?
+            Self::FFmpeg(status, err) => write!(f, "FFmpeg: {err} (status code {status})")?,
         }
         Ok(())
     }
@@ -59,14 +60,19 @@ impl Audio {
             .map_err(AudioExtractError::Command)?;
 
         if ffmpeg.status.success() {
-            let pcm = ffmpeg.stdout.iter().tuples().map(|(&a, &b)| i16::from_le_bytes([a, b])).collect();
+            let pcm = ffmpeg
+                .stdout
+                .iter()
+                .tuples()
+                .map(|(&a, &b)| i16::from_le_bytes([a, b]))
+                .collect();
 
-            Ok(Self {
-                path,
-                pcm,
-            })
+            Ok(Self { path, pcm })
         } else {
-            Err(AudioExtractError::FFmpeg(ffmpeg.status, String::from_utf8(ffmpeg.stderr).unwrap()))
+            Err(AudioExtractError::FFmpeg(
+                ffmpeg.status,
+                String::from_utf8(ffmpeg.stderr).unwrap(),
+            ))
         }
     }
 }
