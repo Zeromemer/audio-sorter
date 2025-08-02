@@ -59,7 +59,7 @@ impl Audio {
             .map_err(AudioExtractError::Command)?;
 
         if ffmpeg.status.success() {
-            let pcm = ffmpeg.stdout.iter().tuples().map(|(a, b)| i16::from_le_bytes([*a, *b])).collect();
+            let pcm = ffmpeg.stdout.iter().tuples().map(|(&a, &b)| i16::from_le_bytes([a, b])).collect();
 
             Ok(Self {
                 path,
