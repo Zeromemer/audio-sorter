@@ -1,4 +1,6 @@
-use std::{env::args, path::PathBuf};
+mod audio;
+
+use std::env::args;
 
 use eframe::{
     App, Frame,
@@ -8,14 +10,24 @@ use eframe::{
     },
 };
 
+use crate::audio::{Audio, AudioExtractError};
+
 fn main() {
     let native_options = eframe::NativeOptions::default();
+
+    let files = args().skip(1).map(Audio::from_file).collect::<Result<Vec<_>, AudioExtractError>>();
+    let files = match files {
+        Ok(files) => files,
+        Err(err) => {
+            eprintln!("{err}");
+            return;
+        }
+    };
+
     let result = eframe::run_native(
         "Audio sorter",
         native_options,
         Box::new(|cc| {
-            let files = args().skip(1).map(PathBuf::from).collect::<Vec<_>>();
-
             Ok(Box::new(AudioSortApp::new(cc, files)))
         }),
     );
@@ -26,7 +38,7 @@ fn main() {
 }
 
 struct AudioSortApp {
-    files: Vec<PathBuf>,
+    files: Vec<Audio>,
 }
 
 impl App for AudioSortApp {
@@ -44,30 +56,30 @@ impl App for AudioSortApp {
 }
 
 impl AudioSortApp {
-    const fn new(_cc: &eframe::CreationContext<'_>, files: Vec<PathBuf>) -> Self {
+    const fn new(_cc: &eframe::CreationContext<'_>, files: Vec<Audio>) -> Self {
         Self { files }
     }
 
     fn files(&mut self, ui: &mut Ui) -> ScrollAreaOutput<()> {
-        ScrollArea::vertical()
-            .auto_shrink([false, false])
-            .show(ui, |ui| {
-                self.files.retain(|file| {
-                    let mut retain = true;
+        ScrollArea::vertical().show(ui, |ui| {
+            self.files.retain(|file| {
+                let mut retain = true;
 
-                    ui.horizontal(|ui| {
-                        ui.label(file.to_string_lossy());
+                ui.horizontal(|ui| {
+                    if ui.label(file.path()).double_clicked() {
+                        println!("{:?}", file.pcm());
+                    }
 
-                        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                            if ui.button("Delete").clicked() {
-                                retain = false;
-                            }
-                        });
+                    ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                        if ui.button("Delete").clicked() {
+                            retain = false;
+                        }
                     });
-
-                    retain
                 });
-            })
+
+                retain
+            });
+        })
     }
 
     fn actions(ui: &mut Ui) -> InnerResponse<()> {
