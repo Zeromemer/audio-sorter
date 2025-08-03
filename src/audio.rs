@@ -75,4 +75,9 @@ impl Audio {
             ))
         }
     }
+
+    pub fn mean_absolute(&self) -> f64 {
+        let sum: i64 = self.pcm.iter().map(|&s| i64::from(s).abs()).sum();
+        sum as f64 / self.pcm.len() as f64
+    }
 }

@@ -5,9 +5,10 @@ use std::env::args;
 use eframe::{
     App, Frame,
     egui::{
-        Align, Button, CentralPanel, Context, InnerResponse, Layout, ScrollArea, TopBottomPanel,
-        Ui, scroll_area::ScrollAreaOutput,
+        Align, CentralPanel, Context, InnerResponse, Layout, ScrollArea, TopBottomPanel, Ui,
+        scroll_area::ScrollAreaOutput,
     },
+    emath::OrderedFloat,
 };
 use rfd::FileDialog;
 
@@ -86,7 +87,7 @@ impl AudioSortApp {
 
     fn actions(&mut self, ui: &mut Ui) -> InnerResponse<()> {
         ui.horizontal(|ui| {
-            if ui.add(Button::new("add")).clicked() {
+            if ui.button("add").clicked() {
                 let files = select_files_to_add();
                 match files {
                     Ok(mut files) => {
@@ -96,6 +97,11 @@ impl AudioSortApp {
                         println!("{err}");
                     }
                 }
+            }
+
+            if ui.button("sort").clicked() {
+                self.audios
+                    .sort_by_cached_key(|a| OrderedFloat(a.mean_absolute()));
             }
         })
     }
