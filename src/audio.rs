@@ -3,14 +3,13 @@ use core::{
     fmt::{self, Display},
 };
 use std::{
-    io::Error as IoError,
-    process::{Command, ExitStatus, Stdio},
+    io::Error as IoError, path::{Path, PathBuf}, process::{Command, ExitStatus, Stdio}
 };
 
 use itertools::Itertools;
 
 pub struct Audio {
-    path: String,
+    path: PathBuf,
     pcm: Vec<i16>,
 }
 
@@ -33,15 +32,15 @@ impl Display for AudioExtractError {
 impl Error for AudioExtractError {}
 
 impl Audio {
-    pub const fn path(&self) -> &str {
-        self.path.as_str()
+    pub fn path(&self) -> &Path {
+        &self.path
     }
 
     pub const fn pcm(&self) -> &Vec<i16> {
         &self.pcm
     }
 
-    pub fn from_file(path: impl Into<String>) -> Result<Self, AudioExtractError> {
+    pub fn from_file(path: impl Into<PathBuf>) -> Result<Self, AudioExtractError> {
         let path = path.into();
 
         let ffmpeg = Command::new("ffmpeg")

@@ -69,7 +69,7 @@ impl AudioSortApp {
                 let mut retain = true;
 
                 ui.horizontal(|ui| {
-                    if ui.label(file.path()).double_clicked() {
+                    if ui.label(file.path().to_string_lossy()).double_clicked() {
                         println!("{:?}", file.pcm());
                     }
 
@@ -115,7 +115,7 @@ fn select_files_to_add() -> Result<Vec<Audio>, AudioExtractError> {
         |handles| {
             handles
                 .iter()
-                .map(|path| Audio::from_file(path.to_string_lossy().into_owned()))
+                .map(Audio::from_file)
                 .collect()
         },
     )
