@@ -1,6 +1,8 @@
 mod audio;
 
+use gstreamer as gst;
 use std::env::args;
+use anyhow::Result;
 
 use eframe::{
     App, Frame,
@@ -12,15 +14,16 @@ use eframe::{
 };
 use rfd::FileDialog;
 
-use crate::audio::{Audio, AudioExtractError};
+use crate::audio::Audio;
 
 fn main() {
+    gst::init().expect("Failed to initialize GStreamer");
     let native_options = eframe::NativeOptions::default();
 
     let files = args()
         .skip(1)
         .map(Audio::from_file)
-        .collect::<Result<Vec<_>, AudioExtractError>>();
+        .collect::<Result<Vec<_>, _>>();
     let files = match files {
         Ok(files) => files,
         Err(err) => {
@@ -69,7 +72,7 @@ impl AudioSortApp {
                 let mut retain = true;
 
                 ui.horizontal(|ui| {
-                    if ui.label(file.path().to_string_lossy()).double_clicked() {
+                    if ui.label(file.path().to_string_lossy()).secondary_clicked() {
                         println!("{:?}", file.pcm());
                     }
 
@@ -107,16 +110,11 @@ impl AudioSortApp {
     }
 }
 
-fn select_files_to_add() -> Result<Vec<Audio>, AudioExtractError> {
+fn select_files_to_add() -> Result<Vec<Audio>> {
     let handles = FileDialog::new().pick_files();
 
     handles.map_or_else(
         || Ok(Vec::new()),
-        |handles| {
-            handles
-                .iter()
-                .map(Audio::from_file)
-                .collect()
-        },
+        |handles| handles.iter().map(Audio::from_file).collect(),
     )
 }
