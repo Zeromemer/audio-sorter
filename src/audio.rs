@@ -23,7 +23,7 @@ impl Display for AudioExtractError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Command(err) => write!(f, "Error instantiating command {err}")?,
-            Self::FFmpeg(status, err) => write!(f, "FFmpeg: {err} (status code {status})")?,
+            Self::FFmpeg(status, err) => write!(f, "FFmpeg returned {status}\nFFmpeg stderr: {err}")?,
         }
         Ok(())
     }
@@ -54,7 +54,7 @@ impl Audio {
             .arg("44100") // 44.1kHz
             .arg("pipe:1") // Output to stdout
             .stdout(Stdio::piped())
-            .stderr(Stdio::null())
+            .stderr(Stdio::piped())
             .output()
             .map_err(AudioExtractError::Command)?;
 
