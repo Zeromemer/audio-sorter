@@ -1,6 +1,5 @@
 mod audio;
 
-use gstreamer as gst;
 use std::env::args;
 use anyhow::Result;
 
@@ -17,7 +16,6 @@ use rfd::FileDialog;
 use crate::audio::Audio;
 
 fn main() {
-    gst::init().expect("Failed to initialize GStreamer");
     let native_options = eframe::NativeOptions::default();
 
     let files = args()
