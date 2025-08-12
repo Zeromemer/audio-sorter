@@ -1,5 +1,6 @@
-use std::path::{Path, PathBuf};
 use anyhow::Result;
+use std::fs::File;
+use std::path::{Path, PathBuf};
 use symphonia::core::audio::SampleBuffer;
 use symphonia::core::codecs::DecoderOptions;
 use symphonia::core::formats::FormatOptions;
@@ -7,7 +8,6 @@ use symphonia::core::io::{MediaSourceStream, MediaSourceStreamOptions};
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
 use symphonia::default::{get_codecs, get_probe};
-use std::fs::File;
 
 pub struct Audio {
     path: PathBuf,
@@ -36,20 +36,25 @@ impl Audio {
         )?;
         let mut format = probed.format;
 
-        let track = format.default_track().ok_or_else(|| anyhow::anyhow!("no default track"))?;
+        let track = format
+            .default_track()
+            .ok_or_else(|| anyhow::anyhow!("no default track"))?;
         let mut decoder = get_codecs().make(&track.codec_params, &DecoderOptions::default())?;
 
         let mut pcm = Vec::new();
 
         while let Ok(packet) = format.next_packet() {
             let decoded = decoder.decode(&packet)?;
-            let mut buf = SampleBuffer::<i16>::new(decoded.frames().try_into().unwrap(), *decoded.spec());
+            let mut buf =
+                SampleBuffer::<i16>::new(decoded.frames().try_into().unwrap(), *decoded.spec());
             buf.copy_interleaved_ref(decoded);
             pcm.extend_from_slice(buf.samples());
         }
 
-        Ok(Self { path: path_buf, pcm })
-
+        Ok(Self {
+            path: path_buf,
+            pcm,
+        })
     }
 
     pub fn mean_absolute(&self) -> f64 {

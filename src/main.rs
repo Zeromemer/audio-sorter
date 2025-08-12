@@ -1,7 +1,7 @@
 mod audio;
 
-use std::env::args;
 use anyhow::Result;
+use std::env::args;
 
 use eframe::{
     App, Frame,
