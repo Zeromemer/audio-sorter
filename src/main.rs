@@ -18,12 +18,12 @@ use crate::audio::Audio;
 fn main() {
     let native_options = eframe::NativeOptions::default();
 
-    let files = args()
+    let audios = args()
         .skip(1)
         .map(Audio::from_file)
         .collect::<Result<Vec<_>, _>>();
-    let files = match files {
-        Ok(files) => files,
+    let audios = match audios {
+        Ok(audios) => audios,
         Err(err) => {
             eprintln!("{err}");
             return;
@@ -33,7 +33,7 @@ fn main() {
     let result = eframe::run_native(
         "Audio sorter",
         native_options,
-        Box::new(|cc| Ok(Box::new(AudioSortApp::new(cc, files)))),
+        Box::new(|cc| Ok(Box::new(AudioSortApp::new(cc, audios)))),
     );
 
     if let Err(err) = result {
@@ -48,9 +48,9 @@ struct AudioSortApp {
 impl App for AudioSortApp {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
         CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Files");
+            ui.heading("Audios");
             ui.separator();
-            self.files(ui);
+            self.audios(ui);
         });
 
         TopBottomPanel::bottom("bottom_buttons").show(ctx, |ui| {
@@ -60,11 +60,11 @@ impl App for AudioSortApp {
 }
 
 impl AudioSortApp {
-    const fn new(_cc: &eframe::CreationContext<'_>, files: Vec<Audio>) -> Self {
-        Self { audios: files }
+    const fn new(_cc: &eframe::CreationContext<'_>, audios: Vec<Audio>) -> Self {
+        Self { audios }
     }
 
-    fn files(&mut self, ui: &mut Ui) -> ScrollAreaOutput<()> {
+    fn audios(&mut self, ui: &mut Ui) -> ScrollAreaOutput<()> {
         ScrollArea::vertical().show(ui, |ui| {
             self.audios.retain(|file| {
                 let mut retain = true;
@@ -89,10 +89,10 @@ impl AudioSortApp {
     fn actions(&mut self, ui: &mut Ui) -> InnerResponse<()> {
         ui.horizontal(|ui| {
             if ui.button("add").clicked() {
-                let files = select_files_to_add();
-                match files {
-                    Ok(mut files) => {
-                        self.audios.append(&mut files);
+                let new_audios = select_audio_to_add();
+                match new_audios {
+                    Ok(mut new_audios) => {
+                        self.audios.append(&mut new_audios);
                     }
                     Err(err) => {
                         println!("{err}");
@@ -108,7 +108,7 @@ impl AudioSortApp {
     }
 }
 
-fn select_files_to_add() -> Result<Vec<Audio>> {
+fn select_audio_to_add() -> Result<Vec<Audio>> {
     let handles = FileDialog::new().pick_files();
 
     handles.map_or_else(
