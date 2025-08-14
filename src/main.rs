@@ -6,8 +6,8 @@ use std::env::args;
 use eframe::{
     App, Frame,
     egui::{
-        Align, CentralPanel, Context, InnerResponse, Layout, ScrollArea, TopBottomPanel, Ui,
-        scroll_area::ScrollAreaOutput,
+        Align, CentralPanel, Context, InnerResponse, Layout, RichText, ScrollArea, TopBottomPanel,
+        Ui, Window, scroll_area::ScrollAreaOutput,
     },
     emath::OrderedFloat,
 };
@@ -43,10 +43,13 @@ fn main() {
 
 struct AudioSortApp {
     audios: Vec<Audio>,
+    error_message: Option<String>,
 }
 
 impl App for AudioSortApp {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
+        self.error_message(ctx);
+
         CentralPanel::default().show(ctx, |ui| {
             ui.heading("Audios");
             ui.separator();
@@ -61,7 +64,22 @@ impl App for AudioSortApp {
 
 impl AudioSortApp {
     const fn new(_cc: &eframe::CreationContext<'_>, audios: Vec<Audio>) -> Self {
-        Self { audios }
+        Self {
+            audios,
+            error_message: None,
+        }
+    }
+
+    fn error_message(&mut self, ctx: &Context) {
+        self.error_message.take_if(|msg| {
+            let response =
+                Window::new("Error").resizable(true).show(ctx, |ui| {
+                    ui.label(RichText::new(msg.as_str()).size(24.0).strong());
+                    ui.button("Ok").clicked()
+                });
+
+            response.is_some_and(|inner| inner.inner.is_some_and(|b| b))
+        });
     }
 
     fn audios(&mut self, ui: &mut Ui) -> ScrollAreaOutput<()> {
@@ -95,7 +113,7 @@ impl AudioSortApp {
                         self.audios.append(&mut new_audios);
                     }
                     Err(err) => {
-                        println!("{err}");
+                        self.error_message = Some(format!("Error while processing files: {err}"));
                     }
                 }
             }
