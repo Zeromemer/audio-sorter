@@ -22,13 +22,6 @@ fn main() {
         .skip(1)
         .map(Audio::from_file)
         .collect::<Result<Vec<_>, _>>();
-    let audios = match audios {
-        Ok(audios) => audios,
-        Err(err) => {
-            eprintln!("{err}");
-            return;
-        }
-    };
 
     let result = eframe::run_native(
         "Audio sorter",
@@ -63,20 +56,25 @@ impl App for AudioSortApp {
 }
 
 impl AudioSortApp {
-    const fn new(_cc: &eframe::CreationContext<'_>, audios: Vec<Audio>) -> Self {
-        Self {
-            audios,
-            error_message: None,
+    fn new(_cc: &eframe::CreationContext<'_>, audios: Result<Vec<Audio>>) -> Self {
+        match audios {
+            Ok(audios) => Self {
+                audios,
+                error_message: None,
+            },
+            Err(err) => Self {
+                audios: vec![],
+                error_message: Some(format!("Error while processing files from arguments {err}")),
+            },
         }
     }
 
     fn error_message(&mut self, ctx: &Context) {
         self.error_message.take_if(|msg| {
-            let response =
-                Window::new("Error").resizable(true).show(ctx, |ui| {
-                    ui.label(RichText::new(msg.as_str()).size(24.0).strong());
-                    ui.button("Ok").clicked()
-                });
+            let response = Window::new("Error").resizable(true).show(ctx, |ui| {
+                ui.label(RichText::new(msg.as_str()).size(24.0).strong());
+                ui.button("Ok").clicked()
+            });
 
             response.is_some_and(|inner| inner.inner.is_some_and(|b| b))
         });
