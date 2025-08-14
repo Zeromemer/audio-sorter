@@ -1,4 +1,5 @@
 use anyhow::Result;
+use std::ffi::OsStr;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use symphonia::core::audio::SampleBuffer;
@@ -28,8 +29,13 @@ impl Audio {
         let file = File::open(&path_buf)?;
         let mss = MediaSourceStream::new(Box::new(file), MediaSourceStreamOptions::default());
 
+        let mut hint = Hint::new();
+        if let Some(ext) = path_buf.extension().and_then(OsStr::to_str) {
+            hint.with_extension(ext);
+        }
+
         let probed = get_probe().format(
-            &Hint::default(),
+            &hint,
             mss,
             &FormatOptions::default(),
             &MetadataOptions::default(),
