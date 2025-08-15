@@ -66,7 +66,7 @@ impl AudioSortApp {
             },
             Err(err) => Self {
                 audios: vec![],
-                error_message: Some(format!("Error while processing files from arguments {err}")),
+                error_message: Some(format!("Error while processing files from arguments: {err}")),
             },
         }
     }
